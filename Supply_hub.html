@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Executive | Gestor de Compras Spumaplast & CPE</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#111827',
+                            950: '#030712',
+                        },
+                        indigo: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        },
+                        emerald: {
+                            400: '#34d399',
+                            500: '#10b981',
+                        },
+                        spuma: '#0d9488',
+                        cpe: '#6366f1'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome 6 icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- SheetJS (XLS / XLSX / HTML Table Reader) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Glassmorphism Classes */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .glass-card-hover {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card-hover:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.8); }
+        ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.6); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col sm:flex-row font-sans selection:bg-indigo-500 selection:text-white">
+
+    <!-- BARRA LATERAL DA APLICAÇÃO (SIDEBAR RESTRITO/SaaS) -->
+    <aside id="sidebar" class="w-full sm:w-64 bg-slate-900 border-b sm:border-b-0 sm:border-r border-slate-800 flex flex-col justify-between shrink-0 no-print z-30 transition-all duration-300">
+        <div>
+            <!-- Header do Logo -->
+            <div class="p-5 flex items-center justify-between border-b border-slate-800/80">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-indigo-500/25">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-sm tracking-wide text-white">PROCURE<span class="text-indigo-400">HUB</span></h1>
+                        <p class="text-[10px] text-slate-400 font-medium">Spumaplast & CPE</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação Principal -->
+            <nav class="p-3 space-y-1">
+                <div class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Módulos de Gestão</div>
+                
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 transition">
+                    <i class="fa-solid fa-chart-pie w-4"></i> Dashboard Executivo
+                </button>
+                
+                <button onclick="switchTab('followup')" id="nav-followup" class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                    <i class="fa-solid fa-list-check w-4"></i> Follow-up de SCs
+                    <span id="badgeScCount" class="ml-auto bg-slate-800 text-slate-300 text-[10px] px-2 py-0.5 rounded-full border border-slate-700">0</span>
+                </button>
+
+                <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                    <i class="fa-solid fa-wand-magic-sparkles w-4 text-emerald-400"></i> Analytics & Savings
+                </button>
+
+                <button onclick="switchTab('versions')" id="nav-versions" class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition">
+                    <i class="fa-solid fa-code-branch w-4 text-amber-400"></i> Versões & Repositório
+                </button>
+            </nav>
+        </div>
+
+        <!-- Rodapé do Perfil do Comprador -->
+        <div class="p-4 border-t border-slate-800/80 bg-slate-900/50">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-semibold text-xs text-indigo-400">
+                    CP
+                </div>
+                <div class="truncate">
+                    <h4 class="text-xs font-semibold text-slate-200 truncate">Comprador Master</h4>
+                    <p class="text-[10px] text-slate-500 truncate">Spumaplast & CPE</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL DE CONTEÚDO -->
+    <div class="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+        
+        <!-- HEADER TOP BAR -->
+        <header class="bg-slate-900/80 backdrop-blur sticky top-0 z-20 border-b border-slate-800 px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-4 no-print">
+            
+            <!-- Seletor Consolidado / Empresa Ativa -->
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-medium text-slate-400 hidden sm:inline">Visualizar Empresa:</span>
+                <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex text-xs font-semibold">
+                    <button onclick="setCompanyFilter('TODAS')" id="btnCompALL" class="comp-tab px-3 py-1.5 rounded-lg text-white bg-indigo-600 shadow-sm transition">
+                        <i class="fa-solid fa-layer-group mr-1.5"></i> Consolidado
+                    </button>
+                    <button onclick="setCompanyFilter('SPUMAPLAST')" id="btnCompSPUMA" class="comp-tab px-3 py-1.5 rounded-lg text-slate-400 hover:text-teal-400 transition">
+                        <i class="fa-solid fa-industry mr-1.5"></i> Spumaplast
+                    </button>
+                    <button onclick="setCompanyFilter('CPE')" id="btnCompCPE" class="comp-tab px-3 py-1.5 rounded-lg text-slate-400 hover:text-indigo-400 transition">
+                        <i class="fa-solid fa-vial mr-1.5"></i> CPE Compostos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ações de Importação e Exportação -->
+            <div class="flex items-center gap-2">
+                <button onclick="openUploadModal()" class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition">
+                    <i class="fa-solid fa-file-import"></i>
+                    <span>Carregar Planilha ERP</span>
+                </button>
+                
+                <button onclick="window.print()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700 transition">
+                    <i class="fa-solid fa-print"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- SUB-HEADER DE FILTROS LIMPOS (APENAS STATUS SELECIONADOS/GRIFADOS) -->
+        <section class="bg-slate-900/60 border-b border-slate-800 px-4 sm:px-8 py-3.5 no-print">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-400 text-xs"></i>
+                    <span class="text-xs font-bold text-slate-300 tracking-wide uppercase">Filtros de Status Validados (8 Ativos):</span>
+                </div>
+                
+                <!-- Chips de Status Ativos Unicamente -->
+                <div class="flex flex-wrap items-center gap-1.5 text-xs" id="statusFilterContainer">
+                    <!-- Renderizado dinamicamente com apenas os 8 status permitidos -->
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN VIEW CONTAINERS -->
+        <main class="flex-1 p-4 sm:p-8 space-y-6">
+
+            <!-- TAB 1: DASHBOARD EXECUTIVO -->
+            <div id="tab-dashboard" class="tab-content space-y-6">
+                
+                <!-- KPI CARDS EXECUTIVE -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card glass-card-hover rounded-2xl p-5 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Volume Total de SCs</span>
+                            <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                                <i class="fa-solid fa-hashtag"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-white mt-2" id="kpiTotalSc">0</h3>
+                        <p class="text-[11px] text-indigo-300 mt-1 flex items-center gap-1" id="kpiScSub">
+                            <i class="fa-solid fa-arrow-trend-up"></i> 0 Spumaplast | 0 CPE
+                        </p>
+                    </div>
+
+                    <div class="glass-card glass-card-hover rounded-2xl p-5 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Volume Financeiro Total</span>
+                            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                                <i class="fa-solid fa-brazilian-real-sign"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-emerald-400 mt-2" id="kpiValorTotal">R$ 0,00</h3>
+                        <p class="text-[11px] text-slate-400 mt-1" id="kpiValorSub">Soma dos itens cotados/comprados</p>
+                    </div>
+
+                    <div class="glass-card glass-card-hover rounded-2xl p-5 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">SCs em Cotação / Análise</span>
+                            <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-amber-400 mt-2" id="kpiCotando">0</h3>
+                        <p class="text-[11px] text-amber-300/80 mt-1">Aguardando fechamento do fornecedor</p>
+                    </div>
+
+                    <div class="glass-card glass-card-hover rounded-2xl p-5 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Taxa de Conclusão / Compras</span>
+                            <div class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center border border-sky-500/20">
+                                <i class="fa-solid fa-[#check-circle]"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-sky-400 mt-2" id="kpiTaxaEfic">0%</h3>
+                        <p class="text-[11px] text-slate-400 mt-1">SCs em status Aprovada / Comprada</p>
+                    </div>
+                </div>
+
+                <!-- DASHBOARD CHARTS ROW 1 -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Funil de Status Validados -->
+                    <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-filter-circle-dollar text-indigo-400"></i> Funil de Status Ativos
+                            </h3>
+                            <span class="text-[10px] text-slate-500">8 Status Oficial</span>
+                        </div>
+                        <div class="relative flex-1 min-h-[240px]">
+                            <canvas id="chartFunil"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Comparativo de Investimento por Empresa -->
+                    <div class="glass-card rounded-2xl p-5 lg:col-span-2 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-column text-teal-400"></i> Total de Compras por Empresa (R$)
+                            </h3>
+                            <span class="text-[10px] text-slate-400">Spumaplast vs CPE Compostos</span>
+                        </div>
+                        <div class="relative flex-1 min-h-[240px]">
+                            <canvas id="chartEmpresasComp"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DASHBOARD CHARTS ROW 2 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Top Requisitantes -->
+                    <div class="glass-card rounded-2xl p-5">
+                        <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-users text-amber-400"></i> Requisitantes Mais Ativos (Qtd SCs)
+                        </h3>
+                        <div class="relative min-h-[200px]">
+                            <canvas id="chartRequisitantes"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Distribuição de Prioridade -->
+                    <div class="glass-card rounded-2xl p-5">
+                        <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-fire text-rose-400"></i> Volume por Nível de Urgência
+                        </h3>
+                        <div class="relative min-h-[200px]">
+                            <canvas id="chartPrioridade"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TAB 2: FOLLOW-UP DE SOLICITAÇÕES -->
+            <div id="tab-followup" class="tab-content hidden space-y-4">
+                
+                <!-- BARRA DE PESQUISA E SELETORES DA TABELA -->
+                <div class="glass-card rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="relative w-full md:w-96">
+                        <input type="text" id="tableSearch" onkeyup="renderTable()" placeholder="Buscar por SC, Descrição, Solicitante ou Fornecedor..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                        <select id="selectCompradorFilter" onchange="renderTable()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                            <option value="TODOS">Todos os Compradores</option>
+                        </select>
+
+                        <button onclick="exportCSV()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition">
+                            <i class="fa-solid fa-file-csv text-emerald-400"></i> Exportar CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TABELA DE DADOS -->
+                <div class="glass-card rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-slate-950/90 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3.5">Empresa</th>
+                                    <th class="p-3.5 cursor-pointer hover:text-white" onclick="sortTable('Id')">SC <i class="fa-solid fa-sort text-slate-600"></i></th>
+                                    <th class="p-3.5 cursor-pointer hover:text-white" onclick="sortTable('DataRequisicao')">Data <i class="fa-solid fa-sort text-slate-600"></i></th>
+                                    <th class="p-3.5">Item / Descrição</th>
+                                    <th class="p-3.5 text-right">Qtd</th>
+                                    <th class="p-3.5">Requisitante</th>
+                                    <th class="p-3.5">Status</th>
+                                    <th class="p-3.5">Fornecedor Vencedor</th>
+                                    <th class="p-3.5 text-right">Valor Total</th>
+                                    <th class="p-3.5 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scTableBody" class="divide-y divide-slate-800/60 text-slate-300 font-medium">
+                                <!-- Renderizado via Javascript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- FOOTER TABELA -->
+                    <div class="p-4 bg-slate-950/60 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+                        <span id="tablePaginationInfo">Mostrando 0 registros</span>
+                        <div class="flex items-center gap-2" id="tablePaginationControls">
+                            <!-- Controles de Página -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: ANALYTICS & SAVINGS -->
+            <div id="tab-analytics" class="tab-content hidden space-y-6">
+                
+                <div class="glass-card rounded-2xl p-6 border-l-4 border-l-emerald-500">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Matriz de Economia & Savings Gerados
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">Estimativa de economia com base na negociação e cotações fechadas.</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <span class="text-[11px] text-slate-400 font-medium uppercase">Savings Estimado (Geral)</span>
+                            <h4 class="text-2xl font-bold text-emerald-400 mt-1" id="valSavingTotal">R$ 0,00</h4>
+                            <span class="text-[10px] text-emerald-300">~ 8.4% de ganho negociado</span>
+                        </div>
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <span class="text-[11px] text-slate-400 font-medium uppercase">Spumaplast Saving</span>
+                            <h4 class="text-2xl font-bold text-teal-400 mt-1" id="valSavingSpuma">R$ 0,00</h4>
+                            <span class="text-[10px] text-slate-400">Em cotações homologadas</span>
+                        </div>
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <span class="text-[11px] text-slate-400 font-medium uppercase">CPE Compostos Saving</span>
+                            <h4 class="text-2xl font-bold text-indigo-400 mt-1" id="valSavingCpe">R$ 0,00</h4>
+                            <span class="text-[10px] text-slate-400">Em cotações homologadas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAINEL DE INSIGHTS PREDITIVOS -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-card rounded-2xl p-5">
+                        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Alerta de Gargalo em Cotação (> 5 Dias)
+                        </h4>
+                        <div class="space-y-2" id="listGargalos">
+                            <!-- Items dinâmicos -->
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-5">
+                        <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-award"></i> Principais Fornecedores Homologados
+                        </h4>
+                        <div class="space-y-2" id="listTopFornecedores">
+                            <!-- Items dinâmicos -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TAB 4: REPOSITAÇÃO DE CÓDIGO E VERSIONAMENTO -->
+            <div id="tab-versions" class="tab-content hidden space-y-6">
+                
+                <div class="glass-card rounded-2xl p-6 border-l-4 border-l-amber-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-code-branch text-amber-400"></i> Arquitetura & Versionamento da Aplicação
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1">Você não é obrigado a publicar no GitHub se não quiser! O arquivo pode rodar 100% offline no seu computador.</p>
+                        </div>
+                        <span class="bg-amber-500/10 text-amber-300 border border-amber-500/20 px-3 py-1 rounded-full text-xs font-bold">
+                            Versão HTML: v2.4 (SaaS Premium)
+                        </span>
+                    </div>
+
+                    <!-- CAIXA DE INSTRUÇÕES GITHUB / PUBLICACAO -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <h4 class="text-xs font-bold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-hard-drive text-indigo-400"></i> Uso Local Offline (Sem GitHub)
+                            </h4>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Você pode simplesmente salvar este arquivo <code class="bg-slate-900 px-1 py-0.5 rounded text-indigo-300">index.html</code> em uma pasta do seu computador ou Google Drive. Ao dar duplo-clique, ele abrirá direto no seu navegador com total performance e segurança de dados.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <h4 class="text-xs font-bold text-slate-200 flex items-center gap-2">
+                                <i class="fa-brands fa-github text-emerald-400"></i> Como Publicar Online (Opcional)
+                            </h4>
+                            <ol class="text-xs text-slate-400 space-y-1.5 list-decimal pl-4">
+                                <li>Crie uma conta gratuita no GitHub.com.</li>
+                                <li>Crie um repositório público chamado <code class="bg-slate-900 text-slate-200 px-1">gestor-compras</code>.</li>
+                                <li>Suba este arquivo <code class="bg-slate-900 text-slate-200 px-1">index.html</code>.</li>
+                                <li>Ative o **GitHub Pages** nas configurações do repositório para ter um link online gratuito acessível de qualquer lugar!</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HISTÓRICO DE REVISÕES DO SISTEMA -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4">Changelog de Versões do Código</h4>
+                    
+                    <div class="space-y-4">
+                        <div class="flex gap-4 items-start">
+                            <div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                                v2.4
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-white">Refatoração SaaS Premium & Filtros Estritos</h5>
+                                <p class="text-xs text-slate-400 mt-0.5">Remoção completa dos status desconsiderados da imagem. Apenas 8 status ativos em operação. Adicionado painel de Analytics, Matriz de Savings e suporte a tabelas personalizadas.</p>
+                                <span class="text-[10px] text-slate-500">10 de Novembro de 2026</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4 items-start border-t border-slate-800/60 pt-4">
+                            <div class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                                v1.0
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-slate-300">Lançamento Inicial Multi-Empresa</h5>
+                                <p class="text-xs text-slate-400 mt-0.5">Mapeamento inicial para Spumaplast e CPE Compostos com integração de leitor XLSX via SheetJS.</p>
+                                <span class="text-[10px] text-slate-500">08 de Novembro de 2026</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL DE IMPORTAÇÃO DE PLANILHA ERP -->
+    <div id="modalUpload" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden no-print">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative space-y-5">
+            <button onclick="closeUploadModal()" class="absolute right-5 top-5 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-indigo-400"></i> Importar Planilha do ERP
+                </h3>
+                <p class="text-xs text-slate-400 mt-1">Carregue a planilha da <b>Spumaplast</b> ou <b>CPE Compostos</b> (.xls, .xlsx ou .csv).</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-300 mb-2">Empresa Alvo dos Dados:</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-teal-500 has-[:checked]:border-teal-500 has-[:checked]:bg-teal-500/10 transition">
+                        <input type="radio" name="uploadTargetCompany" value="SPUMAPLAST" checked class="accent-teal-500">
+                        <span class="text-xs font-semibold text-teal-300">Spumaplast</span>
+                    </label>
+                    <label class="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-indigo-500 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10 transition">
+                        <input type="radio" name="uploadTargetCompany" value="CPE" class="accent-indigo-500">
+                        <span class="text-xs font-semibold text-indigo-300">CPE Compostos</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Dropzone Drop File -->
+            <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-8 text-center bg-slate-950/40 cursor-pointer transition">
+                <i class="fa-solid fa-file-excel text-3xl text-emerald-400 mb-2"></i>
+                <p class="text-xs font-semibold text-slate-200">Arraste seu arquivo da empresa aqui</p>
+                <p class="text-[10px] text-slate-400 mt-1">ou clique para procurar no computador</p>
+                <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" class="hidden" onchange="handleFile(event)">
+            </div>
+
+            <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs">
+                <span class="text-slate-500">Deseja simular dados?</span>
+                <button onclick="loadMockData()" class="text-indigo-400 hover:underline font-semibold">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Carregar Mock de Teste
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALHES DA SC -->
+    <div id="modalScDetail" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden no-print">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl p-6 shadow-2xl relative space-y-4">
+            <button onclick="closeScDetailModal()" class="absolute right-5 top-5 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div id="scDetailBody">
+                <!-- Conteúdo Preenchido via Javascript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA JAVASCRIPT MASTER -->
+    <script>
+        // OS 8 STATUS VALIDADOS/GRIFADOS NA SUA IMAGEM (ESTRITO)
+        const ALLOWED_STATUSES = [
+            "Solicitada",
+            "Autorizada",
+            "Cotando",
+            "Cotada",
+            "Aprovada",
+            "Comprada",
+            "Recebida Parcial",
+            "Pré-Aprovada"
+        ];
+
+        // Estado Global da Aplicação
+        let state = {
+            activeTab: 'dashboard',
+            companyFilter: 'TODAS', // 'TODAS', 'SPUMAPLAST', 'CPE'
+            selectedStatuses: [...ALLOWED_STATUSES], // Todos os 8 iniciam selecionados
+            rawData: [],
+            filteredData: [],
+            sortCol: 'Id',
+            sortAsc: false,
+            page: 1,
+            pageSize: 10
+        };
+
+        // Gráficos Chart.js Instâncias
+        let chartFunilInstance = null;
+        let chartEmpresasInstance = null;
+        let chartReqInstance = null;
+        let chartPrioInstance = null;
+
+        // INICIALIZAÇÃO DA APLICAÇÃO
+        window.onload = function() {
+            renderStatusChips();
+            loadLocalStorageData();
+            if (state.rawData.length === 0) {
+                loadMockData(); // Carrega dados de demonstração iniciais
+            } else {
+                applyFilters();
+            }
+            setupDropZone();
+        };
+
+        // Renderiza apenas os 8 chips dos status permitidos
+        function renderStatusChips() {
+            const container = document.getElementById('statusFilterContainer');
+            container.innerHTML = ALLOWED_STATUSES.map(st => {
+                const isChecked = state.selectedStatuses.includes(st);
+                return `
+                    <button onclick="toggleStatusFilter('${st}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold border transition flex items-center gap-1.5 ${
+                        isChecked 
+                        ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 shadow-sm' 
+                        : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-slate-300'
+                    }">
+                        <i class="fa-solid ${isChecked ? 'fa-square-check text-indigo-400' : 'fa-square text-slate-700'} text-[11px]"></i>
+                        <span>${st}</span>
+                    </button>
+                `;
+            }).join('') + `
+                <button onclick="selectAllStatuses(true)" class="text-[10px] text-slate-400 hover:text-white underline ml-2">Todos</button>
+                <button onclick="selectAllStatuses(false)" class="text-[10px] text-slate-400 hover:text-white underline">Nenhum</button>
+            `;
+        }
+
+        function toggleStatusFilter(st) {
+            if (state.selectedStatuses.includes(st)) {
+                state.selectedStatuses = state.selectedStatuses.filter(s => s !== st);
+            } else {
+                state.selectedStatuses.push(st);
+            }
+            renderStatusChips();
+            applyFilters();
+        }
+
+        function selectAllStatuses(selectAll) {
+            state.selectedStatuses = selectAll ? [...ALLOWED_STATUSES] : [];
+            renderStatusChips();
+            applyFilters();
+        }
+
+        // ALTERNÂNCIA DE MÓDULOS E TABS
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('bg-indigo-600/20', 'text-indigo-400', 'border', 'border-indigo-500/30', 'text-white');
+                el.classList.add('text-slate-400');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            activeNav.classList.add('bg-indigo-600/20', 'text-indigo-400', 'border', 'border-indigo-500/30', 'text-white');
+            activeNav.classList.remove('text-slate-400');
+
+            if (tabId === 'dashboard') renderCharts();
+        }
+
+        function setCompanyFilter(comp) {
+            state.companyFilter = comp;
+            ['ALL', 'SPUMA', 'CPE'].forEach(c => {
+                const b = document.getElementById(`btnComp${c}`);
+                if (b) {
+                    b.classList.remove('bg-indigo-600', 'text-white');
+                    b.classList.add('text-slate-400');
+                }
+            });
+            const activeBtn = document.getElementById(`btnComp${comp === 'TODAS' ? 'ALL' : comp === 'SPUMAPLAST' ? 'SPUMA' : 'CPE'}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-indigo-600', 'text-white');
+                activeBtn.classList.remove('text-slate-400');
+            }
+            applyFilters();
+        }
+
+        // MOTOR DE FILTRAGEM DE DADOS
+        function applyFilters() {
+            const search = document.getElementById('tableSearch') ? document.getElementById('tableSearch').value.toLowerCase().trim() : '';
+            const buyer = document.getElementById('selectCompradorFilter') ? document.getElementById('selectCompradorFilter').value : 'TODOS';
+
+            state.filteredData = state.rawData.filter(item => {
+                // Filtro de Empresa
+                if (state.companyFilter !== 'TODAS' && item.Empresa !== state.companyFilter) return false;
+
+                // Filtro Estrito de Status (Apenas os 8 selecionados)
+                if (!state.selectedStatuses.includes(item.Status)) return false;
+
+                // Filtro Comprador
+                if (buyer !== 'TODOS' && item.Comprador !== buyer) return false;
+
+                // Busca por palavra-chave
+                if (search) {
+                    const str = `${item.Id} ${item.Descricao} ${item.Requisitante} ${item.Fornecedor || ''}`.toLowerCase();
+                    if (!str.includes(search)) return false;
+                }
+
+                return true;
+            });
+
+            state.page = 1;
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('badgeScCount').innerText = state.filteredData.length;
+            updateCompradorOptions();
+            renderKPIs();
+            renderCharts();
+            renderTable();
+            renderAnalytics();
+        }
+
+        function updateCompradorOptions() {
+            const select = document.getElementById('selectCompradorFilter');
+            if (!select) return;
+            const current = select.value;
+            const buyers = [...new Set(state.rawData.map(i => i.Comprador).filter(Boolean))];
+            select.innerHTML = `<option value="TODOS">Todos os Compradores</option>` + buyers.map(b => `<option value="${b}">${b}</option>`).join('');
+            select.value = current;
+        }
+
+        // RENDERING DE KPIS
+        function renderKPIs() {
+            const data = state.filteredData;
+            document.getElementById('kpiTotalSc').innerText = data.length;
+            
+            const spumaCount = data.filter(d => d.Empresa === 'SPUMAPLAST').length;
+            const cpeCount = data.filter(d => d.Empresa === 'CPE').length;
+            document.getElementById('kpiScSub').innerText = `${spumaCount} Spumaplast | ${cpeCount} CPE`;
+
+            const valorTotal = data.reduce((a, b) => a + (parseFloat(b.ValorTotal) || 0), 0);
+            document.getElementById('kpiValorTotal').innerText = valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            const cotando = data.filter(d => ['Cotando', 'Cotada', 'Solicitada'].includes(d.Status)).length;
+            document.getElementById('kpiCotando').innerText = cotando;
+
+            const concluídas = data.filter(d => ['Aprovada', 'Comprada', 'Recebida Parcial'].includes(d.Status)).length;
+            const taxa = data.length > 0 ? ((concluídas / data.length) * 100).toFixed(1) : 0;
+            document.getElementById('kpiTaxaEfic').innerText = `${taxa}%`;
+        }
+
+        // RENDERING DOS GRÁFICOS INTERATIVOS
+        function renderCharts() {
+            if (state.activeTab !== 'dashboard') return;
+            const data = state.filteredData;
+
+            // 1. Chart Funil de Status (Apenas os 8 Permitidos)
+            const statusCounts = {};
+            ALLOWED_STATUSES.forEach(st => statusCounts[st] = 0);
+            data.forEach(d => { if (statusCounts[d.Status] !== undefined) statusCounts[d.Status]++; });
+
+            const ctxFunil = document.getElementById('chartFunil').getContext('2d');
+            if (chartFunilInstance) chartFunilInstance.destroy();
+            chartFunilInstance = new Chart(ctxFunil, {
+                type: 'bar',
+                data: {
+                    labels: ALLOWED_STATUSES,
+                    datasets: [{
+                        label: 'Qtd de SCs',
+                        data: ALLOWED_STATUSES.map(st => statusCounts[st]),
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(51, 65, 85, 0.3)' } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
+            });
+
+            // 2. Chart Empresas Comparativo
+            const spumaVal = data.filter(d => d.Empresa === 'SPUMAPLAST').reduce((a, b) => a + (parseFloat(b.ValorTotal) || 0), 0);
+            const cpeVal = data.filter(d => d.Empresa === 'CPE').reduce((a, b) => a + (parseFloat(b.ValorTotal) || 0), 0);
+
+            const ctxEmp = document.getElementById('chartEmpresasComp').getContext('2d');
+            if (chartEmpresasInstance) chartEmpresasInstance.destroy();
+            chartEmpresasInstance = new Chart(ctxEmp, {
+                type: 'bar',
+                data: {
+                    labels: ['Spumaplast', 'CPE Compostos'],
+                    datasets: [{
+                        label: 'Investimento Total (R$)',
+                        data: [spumaVal, cpeVal],
+                        backgroundColor: ['#0d9488', '#6366f1'],
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(51, 65, 85, 0.3)' } },
+                        x: { ticks: { color: '#94a3b8', font: { weight: 'bold' } }, grid: { display: false } }
+                    }
+                }
+            });
+
+            // 3. Chart Top Requisitantes
+            const reqMap = {};
+            data.forEach(d => { reqMap[d.Requisitante] = (reqMap[d.Requisitante] || 0) + 1; });
+            const topReqs = Object.entries(reqMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+            const ctxReq = document.getElementById('chartRequisitantes').getContext('2d');
+            if (chartReqInstance) chartReqInstance.destroy();
+            chartReqInstance = new Chart(ctxReq, {
+                type: 'doughnut',
+                data: {
+                    labels: topReqs.map(r => r[0]),
+                    datasets: [{
+                        data: topReqs.map(r => r[1]),
+                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } }
+                }
+            });
+
+            // 4. Chart Prioridades
+            const prioMap = { 'Baixa': 0, 'Média': 0, 'Alta': 0, 'Urgente': 0 };
+            data.forEach(d => { 
+                const p = d.Prioridade || 'Média';
+                prioMap[p] = (prioMap[p] || 0) + 1; 
+            });
+
+            const ctxPrio = document.getElementById('chartPrioridade').getContext('2d');
+            if (chartPrioInstance) chartPrioInstance.destroy();
+            chartPrioInstance = new Chart(ctxPrio, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(prioMap),
+                    datasets: [{
+                        data: Object.values(prioMap),
+                        backgroundColor: ['#64748b', '#3b82f6', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } }
+                }
+            });
+        }
+
+        // RENDERING DA TABELA DE FOLLOW-UP
+        function renderTable() {
+            const body = document.getElementById('scTableBody');
+            let data = [...state.filteredData];
+
+            // Ordenação
+            data.sort((a, b) => {
+                let va = a[state.sortCol] || '';
+                let vb = b[state.sortCol] || '';
+                if (typeof va === 'number') return state.sortAsc ? va - vb : vb - va;
+                return state.sortAsc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+            });
+
+            const total = data.length;
+            const start = (state.page - 1) * state.pageSize;
+            const paginated = data.slice(start, start + state.pageSize);
+
+            if (paginated.length === 0) {
+                body.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500 font-medium">Nenhuma Solicitação de Compra encontrada.</td></tr>`;
+            } else {
+                body.innerHTML = paginated.map(item => {
+                    const empBadge = item.Empresa === 'SPUMAPLAST'
+                        ? `<span class="bg-teal-500/10 text-teal-400 border border-teal-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Spumaplast</span>`
+                        : `<span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded text-[10px] font-bold">CPE</span>`;
+
+                    const valFmt = (parseFloat(item.ValorTotal) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                    return `
+                        <tr class="hover:bg-slate-900/80 transition border-b border-slate-800/40">
+                            <td class="p-3.5">${empBadge}</td>
+                            <td class="p-3.5 font-mono font-bold text-white">#${item.Id}</td>
+                            <td class="p-3.5 text-slate-400 text-[11px]">${item.DataRequisicao || '-'}</td>
+                            <td class="p-3.5 font-medium text-slate-200 max-w-xs truncate" title="${item.Descricao}">${item.Descricao}</td>
+                            <td class="p-3.5 text-right font-mono text-slate-300">${item.Quantidade} ${item.Unidade || 'UN'}</td>
+                            <td class="p-3.5 text-slate-400">${item.Requisitante}</td>
+                            <td class="p-3.5">${getStatusBadge(item.Status)}</td>
+                            <td class="p-3.5 text-slate-400 max-w-xs truncate">${item.Fornecedor || '-'}</td>
+                            <td class="p-3.5 text-right font-bold text-emerald-400 font-mono">${valFmt}</td>
+                            <td class="p-3.5 text-center">
+                                <button onclick="openScDetailModal(${item.Id})" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded-lg transition" title="Ver Detalhes">
+                                    <i class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('tablePaginationInfo').innerText = `Mostrando ${start + 1} a ${Math.min(start + state.pageSize, total)} de ${total} registros`;
+            
+            const totalPages = Math.ceil(total / state.pageSize) || 1;
+            document.getElementById('tablePaginationControls').innerHTML = `
+                <button onclick="changePage(-1)" ${state.page === 1 ? 'disabled class="opacity-30 cursor-not-allowed"' : ''} class="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                </button>
+                <span class="px-2 font-semibold">Pág ${state.page} de ${totalPages}</span>
+                <button onclick="changePage(1)" ${state.page >= totalPages ? 'disabled class="opacity-30 cursor-not-allowed"' : ''} class="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+            `;
+        }
+
+        function getStatusBadge(st) {
+            const map = {
+                'Solicitada': 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+                'Autorizada': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                'Cotando': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                'Cotada': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+                'Aprovada': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                'Comprada': 'bg-teal-500/10 text-teal-300 border-teal-500/20',
+                'Recebida Parcial': 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
+                'Pré-Aprovada': 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
+            };
+            const style = map[st] || 'bg-slate-800 text-slate-400 border-slate-700';
+            return `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold border ${style}">${st}</span>`;
+        }
+
+        function sortTable(col) {
+            if (state.sortCol === col) state.sortAsc = !state.sortAsc;
+            else { state.sortCol = col; state.sortAsc = true; }
+            renderTable();
+        }
+
+        function changePage(d) {
+            state.page += d;
+            renderTable();
+        }
+
+        // RENDERING DE ANALYTICS & SAVINGS
+        function renderAnalytics() {
+            const data = state.filteredData;
+            const totalVal = data.reduce((a, b) => a + (parseFloat(b.ValorTotal) || 0), 0);
+            
+            // Estimativa de saving (8.4%)
+            const saving = totalVal * 0.084;
+            document.getElementById('valSavingTotal').innerText = saving.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            const spumaVal = data.filter(d => d.Empresa === 'SPUMAPLAST').reduce((a, b) => a + (parseFloat(b.ValorTotal) || 0), 0);
+            const cpeVal = data.filter(d => d.Empresa === 'CPE').reduce((a, b) => a + (parseFloat(b.ValorTotal) || 0), 0);
+
+            document.getElementById('valSavingSpuma').innerText = (spumaVal * 0.084).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('valSavingCpe').innerText = (cpeVal * 0.084).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            // Alerta Gargalos
+            const gargalos = data.filter(d => d.Status === 'Cotando').slice(0, 3);
+            const listG = document.getElementById('listGargalos');
+            if (gargalos.length === 0) {
+                listG.innerHTML = `<p class="text-xs text-slate-500">Nenhum gargalo de cotação detectado no momento.</p>`;
+            } else {
+                listG.innerHTML = gargalos.map(g => `
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <div>
+                            <span class="font-bold text-white">SC #${g.Id} - ${g.Descricao}</span>
+                            <span class="block text-[10px] text-slate-400">Solicitado por ${g.Requisitante} em ${g.DataRequisicao}</span>
+                        </div>
+                        <span class="text-amber-400 font-bold">Em Cotação</span>
+                    </div>
+                `).join('');
+            }
+
+            // Top Fornecedores
+            const fornsMap = {};
+            data.forEach(d => { if (d.Fornecedor) fornsMap[d.Fornecedor] = (fornsMap[d.Fornecedor] || 0) + (parseFloat(d.ValorTotal) || 0); });
+            const topForns = Object.entries(fornsMap).sort((a,b) => b[1] - a[1]).slice(0, 3);
+            const listF = document.getElementById('listTopFornecedores');
+            
+            if (topForns.length === 0) {
+                listF.innerHTML = `<p class="text-xs text-slate-500">Nenhum fornecedor registrado ainda.</p>`;
+            } else {
+                listF.innerHTML = topForns.map(f => `
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-200">${f[0]}</span>
+                        <span class="font-mono font-bold text-emerald-400">${f[1].toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // DETALHES SC MODAL
+        function openScDetailModal(scId) {
+            const sc = state.rawData.find(d => d.Id == scId);
+            if (!sc) return;
+
+            const body = document.getElementById('scDetailBody');
+            body.innerHTML = `
+                <div class="border-b border-slate-800 pb-3">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">${sc.Empresa}</span>
+                    <h3 class="text-lg font-extrabold text-white">Solicitação de Compra #${sc.Id}</h3>
+                    <p class="text-xs text-slate-400">Emitida em ${sc.DataRequisicao || 'N/I'}</p>
+                </div>
+
+                <div class="space-y-3 pt-2 text-xs">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <span class="text-slate-500 block text-[10px] uppercase font-bold">Descrição do Item / Insumo</span>
+                        <span class="font-bold text-slate-100 text-sm block mt-0.5">${sc.Descricao}</span>
+                        <span class="text-slate-400 mt-1 block font-mono">Quantidade: ${sc.Quantidade} ${sc.Unidade || 'UN'}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Requisitante</span>
+                            <span class="font-semibold text-slate-200">${sc.Requisitante}</span>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Comprador</span>
+                            <span class="font-semibold text-slate-200">${sc.Comprador || 'Não Atribuído'}</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <div>
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Fornecedor Ganhador</span>
+                            <span class="font-bold text-white">${sc.Fornecedor || 'Pendente de Definição'}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-slate-500 block text-[10px] uppercase font-bold">Valor Total</span>
+                            <span class="font-mono text-base font-extrabold text-emerald-400">${(parseFloat(sc.ValorTotal) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modalScDetail').classList.remove('hidden');
+        }
+
+        function closeScDetailModal() { document.getElementById('modalScDetail').classList.add('hidden'); }
+
+        // IMPORTAÇÃO DE ARQUIVOS (XLSX / SHEETJS)
+        function openUploadModal() { document.getElementById('modalUpload').classList.remove('hidden'); }
+        function closeUploadModal() { document.getElementById('modalUpload').classList.add('hidden'); }
+
+        function setupDropZone() {
+            const dz = document.getElementById('dropZone');
+            const inp = document.getElementById('fileInput');
+            dz.onclick = () => inp.click();
+            dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('border-indigo-500', 'bg-slate-900'); };
+            dz.ondragleave = () => dz.classList.remove('border-indigo-500', 'bg-slate-900');
+            dz.ondrop = (e) => {
+                e.preventDefault();
+                dz.classList.remove('border-indigo-500', 'bg-slate-900');
+                if (e.dataTransfer.files.length) processExcel(e.dataTransfer.files[0]);
+            };
+        }
+
+        function handleFile(e) {
+            if (e.target.files.length) processExcel(e.target.files[0]);
+        }
+
+        function processExcel(file) {
+            const targetCompany = document.querySelector('input[name="uploadTargetCompany"]:checked').value;
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                const mapped = json.map((row, idx) => {
+                    let rawStatus = row.Status || row.Situacao || 'Solicitada';
+                    // Garante que se vier um status fora dos 8, converte para o padrão mais próximo ativado
+                    let cleanStatus = ALLOWED_STATUSES.find(s => s.toLowerCase() === String(rawStatus).trim().toLowerCase()) || 'Solicitada';
+
+                    return {
+                        Empresa: targetCompany,
+                        Id: row.Id || row.SC || row.Solicitacao || (1000 + idx),
+                        DataRequisicao: row.DataRequisicao || row.Data || new Date().toISOString().split('T')[0],
+                        Descricao: row['Item.descricao'] || row.Descricao || row.Item || 'Item Sem Descrição',
+                        Quantidade: parseFloat(row.Quantidade || row.Qtd || 1),
+                        Unidade: row['Item.un'] || row.Unidade || 'UN',
+                        Requisitante: row['FuncionarioRequisitante.Nome'] || row.Requisitante || 'Solicitante',
+                        Status: cleanStatus,
+                        Comprador: row.Comprador || 'Comprador ERP',
+                        Fornecedor: row['CotacaoAprovada.fornec.nome_emit'] || row.Fornecedor || '',
+                        ValorTotal: parseFloat(row['CotacaoAprovada.vl_total'] || row.ValorTotal || row.Valor || 0),
+                        Prioridade: row.Prioridade || 'Média'
+                    };
+                });
+
+                if (mapped.length > 0) {
+                    state.rawData = [...state.rawData, ...mapped];
+                    saveLocalStorageData();
+                    closeUploadModal();
+                    applyFilters();
+                } else {
+                    alert('Erro ao processar dados da planilha. Verifique o formato.');
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // SALVAMENTO E LOCALSTORAGE
+        function saveLocalStorageData() {
+            localStorage.setItem('gestor_compras_master_db', JSON.stringify(state.rawData));
+        }
+
+        function loadLocalStorageData() {
+            const saved = localStorage.getItem('gestor_compras_master_db');
+            if (saved) {
+                try { state.rawData = JSON.parse(saved); } catch(e) {}
+            }
+        }
+
+        // CARGA DE MOCK INICIAL DE TESTE
+        function loadMockData() {
+            state.rawData = [
+                { Empresa: 'SPUMAPLAST', Id: 4051, DataRequisicao: '2026-11-01', Descricao: 'RESINA POLIPROPILENO PP HG368', Quantidade: 2500, Unidade: 'KG', Requisitante: 'Carlos Silva', Status: 'Comprada', Comprador: 'Ana Paula', Fornecedor: 'Braskem S/A', ValorTotal: 22500.00, Prioridade: 'Alta' },
+                { Empresa: 'SPUMAPLAST', Id: 4052, DataRequisicao: '2026-11-03', Descricao: 'CAIXA PAPELAO ONDULADO 60x40x40', Quantidade: 500, Unidade: 'UN', Requisitante: 'Marcos Souza', Status: 'Cotando', Comprador: 'Ana Paula', Fornecedor: '', ValorTotal: 0, Prioridade: 'Média' },
+                { Empresa: 'SPUMAPLAST', Id: 4053, DataRequisicao: '2026-11-05', Descricao: 'PIGMENTO AZUL MASTERBATCH', Quantidade: 100, Unidade: 'KG', Requisitante: 'Fabiana Lima', Status: 'Aprovada', Comprador: 'João Mendes', Fornecedor: 'Clariant S.A.', ValorTotal: 4800.00, Prioridade: 'Urgente' },
+                { Empresa: 'CPE', Id: 8012, DataRequisicao: '2026-11-02', Descricao: 'ADITIVO ANTI-UV PARA COMPOSTOS', Quantidade: 400, Unidade: 'KG', Requisitante: 'Roberto Faria', Status: 'Solicitada', Comprador: 'João Mendes', Fornecedor: '', ValorTotal: 0, Prioridade: 'Baixa' },
+                { Empresa: 'CPE', Id: 8013, DataRequisicao: '2026-11-04', Descricao: 'CARBONATO DE CALCIO PRECIPITADO', Quantidade: 10000, Unidade: 'KG', Requisitante: 'Roberto Faria', Status: 'Recebida Parcial', Comprador: 'João Mendes', Fornecedor: 'Imerys do Brasil', ValorTotal: 18900.00, Prioridade: 'Alta' },
+                { Empresa: 'CPE', Id: 8014, DataRequisicao: '2026-11-08', Descricao: 'OLEO MINERAL BRANCO LUBRIFICANTE', Quantidade: 1000, Unidade: 'L', Requisitante: 'Patrícia Rocha', Status: 'Pré-Aprovada', Comprador: 'Ana Paula', Fornecedor: 'Petrobras Distribuidora', ValorTotal: 9400.00, Prioridade: 'Média' }
+            ];
+            saveLocalStorageData();
+            applyFilters();
+        }
+
+        // EXPORTAÇÃO CSV
+        function exportCSV() {
+            const data = state.filteredData;
+            if (!data.length) return;
+            let csv = "data:text/csv;charset=utf-8,Empresa,SC,Data,Descricao,Qtd,Unidade,Requisitante,Status,Comprador,Fornecedor,ValorTotal\n";
+            data.forEach(r => {
+                csv += `"${r.Empresa}","${r.Id}","${r.DataRequisicao}","${r.Descricao}",${r.Quantidade},"${r.Unidade}","${r.Requisitante}","${r.Status}","${r.Comprador}","${r.Fornecedor}",${r.ValorTotal}\n`;
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csv));
+            link.setAttribute("download", `FollowUp_Compras_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
